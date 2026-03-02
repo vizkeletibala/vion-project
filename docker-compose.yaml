@@ -1,14 +1,12 @@
 services:
   traefik:
-    image: traefik:v3.1
+    image: traefik:v3.6.2
     command:
       - --api.dashboard=true
       - --api.insecure=true
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
       - --entrypoints.web.address=:80
-    environment:
-      - DOCKER_API_VERSION=1.44
     ports:
       - "80:80"
       - "8080:8080" # Traefik dashboard (dev only)
@@ -19,6 +17,9 @@ services:
       - traefik.http.routers.traefik.rule=Host(`traefik.vion.test`)
       - traefik.http.routers.traefik.entrypoints=web
       - traefik.http.routers.traefik.service=api@internal
+      - prometheus.scrape=true
+      - prometheus.port=YOUR_METRICS_PORT
+      - prometheus.path=/metrics
     networks:
       - edge
 
@@ -34,6 +35,9 @@ services:
       - traefik.http.routers.registry.rule=Host(`registry.localhost`)
       - traefik.http.routers.registry.entrypoints=web
       - traefik.http.services.registry.loadbalancer.server.port=5000
+      - prometheus.scrape=true
+      - prometheus.port=YOUR_METRICS_PORT
+      - prometheus.path=/metrics
     networks:
       - edge
 
@@ -54,6 +58,9 @@ services:
       - traefik.http.routers.jenkins.rule=Host(`jenkins.vion.test`)
       - traefik.http.routers.jenkins.entrypoints=web
       - traefik.http.services.jenkins.loadbalancer.server.port=8080
+      - prometheus.scrape=true
+      - prometheus.port=YOUR_METRICS_PORT
+      - prometheus.path=/metrics
     networks:
       - edge
       - internal
@@ -61,12 +68,17 @@ services:
   prometheus:
     image: prom/prometheus:v2.54.1
     restart: unless-stopped
+    group_add:
+      - "${DOCKER_GID:-988}"
+    ports:
+      - "9090:9090"
     command:
       - --config.file=/etc/prometheus/prometheus.yaml
       - --storage.tsdb.retention.time=7d
     volumes:
       - ./platform-stack/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
       - prometheus-data:/prometheus
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - internal
 
@@ -97,6 +109,10 @@ services:
     volumes:
       - ./platform-stack/loki/loki-config.yaml:/etc/loki/loki-config.yml:ro
       - loki-data:/loki
+    labels:
+      - prometheus.scrape=true
+      - prometheus.port=YOUR_METRICS_PORT
+      - prometheus.path=/metrics
     networks:
       - internal
 
@@ -108,6 +124,10 @@ services:
       - ./platform-stack/promtail/promtail-config.yaml:/etc/promtail/promtail-config.yml:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels:
+      - prometheus.scrape=true
+      - prometheus.port=YOUR_METRICS_PORT
+      - prometheus.path=/metrics
     networks:
       - internal
     depends_on:
@@ -121,6 +141,10 @@ services:
       - /:/host:ro
     command:
       - --path.rootfs=/host
+    labels:
+      - prometheus.scrape=true
+      - prometheus.port=YOUR_METRICS_PORT
+      - prometheus.path=/metrics
     networks:
       - internal
 
@@ -158,6 +182,10 @@ services:
     ports:
       - "53:53/udp"
       - "53:53/tcp"
+    labels:
+      - prometheus.scrape=true
+      - prometheus.port=YOUR_METRICS_PORT
+      - prometheus.path=/metrics
     networks:
       - edge
 
