@@ -44,6 +44,8 @@ services:
       - REGISTRY_HTTP_DEBUG_PROMETHEUS_PATH=/metrics
     volumes:
       - registry-data:/var/lib/registry
+    ports:
+      - "5000:5000"
     labels:
       - traefik.enable=true
       - traefik.http.routers.registry.rule=Host(`registry.localhost`)
@@ -60,7 +62,7 @@ services:
       - internal
 
   jenkins:
-    image: jenkins/jenkins:lts-jdk17
+    image: localhost:5000/vion/jenkins-docker:lts-jdk17
     restart: unless-stopped
     user: root
     environment:
