@@ -4,6 +4,13 @@ services:
     command:
       - --api.dashboard=true
       - --api.insecure=true
+      - --log.level=INFO
+      - --log.format=json
+      - --accesslog=true
+      - --accesslog.format=json
+      - --metrics.prometheus=true
+      - --metrics.prometheus.addrouterslabels=true
+      - --metrics.prometheus.addserviceslabels=true
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
       - --entrypoints.web.address=:80
@@ -17,17 +24,24 @@ services:
       - traefik.http.routers.traefik.rule=Host(`traefik.vion.test`)
       - traefik.http.routers.traefik.entrypoints=web
       - traefik.http.routers.traefik.service=api@internal
+      - logging.enabled=true
+      - logging.stack=vion
+      - logging.service=traefik
       - prometheus.scrape=true
-      - prometheus.port=YOUR_METRICS_PORT
+      - prometheus.port=8080
       - prometheus.path=/metrics
     networks:
       - edge
+      - internal
 
   registry:
     image: registry:2
     restart: unless-stopped
     environment:
       - REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY=/var/lib/registry
+      - REGISTRY_HTTP_DEBUG_ADDR=0.0.0.0:5001
+      - REGISTRY_HTTP_DEBUG_PROMETHEUS_ENABLED=true
+      - REGISTRY_HTTP_DEBUG_PROMETHEUS_PATH=/metrics
     volumes:
       - registry-data:/var/lib/registry
     labels:
@@ -35,11 +49,15 @@ services:
       - traefik.http.routers.registry.rule=Host(`registry.localhost`)
       - traefik.http.routers.registry.entrypoints=web
       - traefik.http.services.registry.loadbalancer.server.port=5000
+      - logging.enabled=true
+      - logging.stack=vion
+      - logging.service=registry
       - prometheus.scrape=true
-      - prometheus.port=YOUR_METRICS_PORT
+      - prometheus.port=5001
       - prometheus.path=/metrics
     networks:
       - edge
+      - internal
 
   jenkins:
     image: jenkins/jenkins:lts-jdk17
@@ -58,9 +76,9 @@ services:
       - traefik.http.routers.jenkins.rule=Host(`jenkins.vion.test`)
       - traefik.http.routers.jenkins.entrypoints=web
       - traefik.http.services.jenkins.loadbalancer.server.port=8080
-      - prometheus.scrape=true
-      - prometheus.port=YOUR_METRICS_PORT
-      - prometheus.path=/metrics
+      - logging.enabled=true
+      - logging.stack=vion
+      - logging.service=jenkins
     networks:
       - edge
       - internal
@@ -79,7 +97,12 @@ services:
       - ./platform-stack/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
       - prometheus-data:/prometheus
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels:
+      - logging.enabled=true
+      - logging.stack=vion
+      - logging.service=prometheus
     networks:
+      - edge
       - internal
 
   grafana:
@@ -98,6 +121,9 @@ services:
       - traefik.http.routers.grafana.rule=Host(`grafana.vion.test`)
       - traefik.http.routers.grafana.entrypoints=web
       - traefik.http.services.grafana.loadbalancer.server.port=3000
+      - logging.enabled=true
+      - logging.stack=vion
+      - logging.service=grafana
     networks:
       - edge
       - internal
@@ -110,8 +136,11 @@ services:
       - ./platform-stack/loki/loki-config.yaml:/etc/loki/loki-config.yml:ro
       - loki-data:/loki
     labels:
+      - logging.enabled=true
+      - logging.stack=vion
+      - logging.service=loki
       - prometheus.scrape=true
-      - prometheus.port=YOUR_METRICS_PORT
+      - prometheus.port=3100
       - prometheus.path=/metrics
     networks:
       - internal
@@ -122,11 +151,15 @@ services:
     command: -config.file=/etc/promtail/promtail-config.yml
     volumes:
       - ./platform-stack/promtail/promtail-config.yaml:/etc/promtail/promtail-config.yml:ro
+      - promtail-positions:/var/lib/promtail
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     labels:
+      - logging.enabled=true
+      - logging.stack=vion
+      - logging.service=promtail
       - prometheus.scrape=true
-      - prometheus.port=YOUR_METRICS_PORT
+      - prometheus.port=9080
       - prometheus.path=/metrics
     networks:
       - internal
@@ -142,9 +175,9 @@ services:
     command:
       - --path.rootfs=/host
     labels:
-      - prometheus.scrape=true
-      - prometheus.port=YOUR_METRICS_PORT
-      - prometheus.path=/metrics
+      - logging.enabled=true
+      - logging.stack=vion
+      - logging.service=node-exporter
     networks:
       - internal
 
@@ -165,6 +198,9 @@ services:
       - traefik.http.routers.cadvisor.rule=Host(`cadvisor.vion.test`)
       - traefik.http.routers.cadvisor.entrypoints=web
       - traefik.http.services.cadvisor.loadbalancer.server.port=8080
+      - logging.enabled=true
+      - logging.stack=vion
+      - logging.service=cadvisor
     networks:
       - internal
 
@@ -178,14 +214,14 @@ services:
     command:
       - --no-daemon
       - --log-facility=-
-      - --address=/vion.test/${VION_LAN_IP}
+      - --address=/vion.test/188.157.248.146
     ports:
       - "53:53/udp"
       - "53:53/tcp"
     labels:
-      - prometheus.scrape=true
-      - prometheus.port=YOUR_METRICS_PORT
-      - prometheus.path=/metrics
+      - logging.enabled=true
+      - logging.stack=vion
+      - logging.service=dnsmasq
     networks:
       - edge
 
@@ -199,3 +235,4 @@ volumes:
   prometheus-data:
   grafana-data:
   loki-data:
+  promtail-positions:
