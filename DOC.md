@@ -49,14 +49,15 @@ This file summarizes the changes and setup steps applied to the stack during con
    - Loki and Promtail expose metrics for Prometheus scraping.
    - Registry exposes debug Prometheus metrics on internal port `5001`.
 
-11. Added a direct Docker endpoint for the local registry:
-   - Published `5000:5000` on the host for `docker push` and `docker pull`.
-   - Kept the Traefik route `registry.localhost` for browser-style access.
-   - Docker clients on this host should use `localhost:5000`.
+11. Routed the local registry through the LAN Traefik endpoint:
+   - Normal Docker endpoint: `registry.vion.test:80`.
+   - Registry route: `registry.vion.test`.
+   - Direct `5000:5000` access moved to `docker-compose.registry-direct.yaml` for troubleshooting or migration.
 
 12. Switched Jenkins to a custom image stored in the local registry:
-   - Runtime image: `localhost:5000/vion/jenkins-docker:lts-jdk17`
+   - Runtime image: `registry.vion.test:80/vion/jenkins-docker:lts-jdk17`
    - Build file: `platform-stack/jenkins/Dockerfile`
+   - Compose builds this image locally before starting Jenkins, so initial platform startup does not require a running registry.
    - Based on `jenkins/jenkins:lts-jdk17`
    - Includes Docker CLI and Docker Compose plugin
    - Existing jobs and state remain in the `jenkins-home` volume
@@ -193,7 +194,7 @@ If a service is missing:
 Run a few requests that should produce logs:
 
 ```bash
-curl -H 'Host: registry.localhost' http://127.0.0.1/v2/
+curl -H 'Host: registry.vion.test' http://127.0.0.1/v2/
 curl http://127.0.0.1:8081/login
 curl http://127.0.0.1:8080/metrics
 ```
@@ -315,7 +316,7 @@ Expected value is `1`.
 - Loki is not ready: check `docker compose logs loki`.
 - Grafana has no Loki data source: check `platform-stack/grafana/provisioning/datasources/datasources.yaml`.
 - Prometheus target is down: check `http://localhost:9090/targets` and the `prometheus.port` label for that service.
-- A Docker push to `registry.localhost` fails: use `localhost:5000` for Docker CLI operations and keep `registry.localhost` for routed HTTP access.
+- A Docker push to `registry.vion.test:80` fails: verify DNS resolves to the platform host and Docker is configured with `"insecure-registries": ["registry.vion.test:80"]`.
 - Grafana dashboards are missing after restart: check `platform-stack/grafana/provisioning/dashboards/dashboards.yaml` and confirm Grafana logs show `finished to provision dashboards`.
 
 ## DNS Setup (Team Usage)

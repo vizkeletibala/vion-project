@@ -59,17 +59,18 @@ Primary compose file:
 
 ### Important current decisions
 
-1. Docker CLI registry endpoint is `localhost:5000`.
+1. Docker CLI registry endpoint is `registry.vion.test:80`.
    - Use this for `docker build`, `docker push`, and `docker pull`.
-   - Example: `localhost:5000/vion/jenkins-docker:lts-jdk17`
+   - Example: `registry.vion.test:80/vion/jenkins-docker:lts-jdk17`
 
-2. Traefik still routes the registry at `registry.localhost`.
-   - This is fine for routed HTTP access.
-   - Do not assume Docker can push to `registry.localhost` on this host.
+2. Traefik routes the registry at `registry.vion.test`.
+   - Docker clients must configure `registry.vion.test:80` as an insecure registry for LAN HTTP push/pull.
+   - Use `docker-compose.registry-direct.yaml` only for troubleshooting or migration.
 
 3. Jenkins runs a custom image, not the stock upstream image.
-   - Current image: `localhost:5000/vion/jenkins-docker:lts-jdk17`
+   - Current image: `registry.vion.test:80/vion/jenkins-docker:lts-jdk17`
    - Dockerfile: `platform-stack/jenkins/Dockerfile`
+   - Compose builds it locally at startup to avoid a first-run dependency on the platform registry.
    - It includes Docker CLI and Docker Compose plugin.
 
 4. Jenkins state must be preserved.
@@ -91,8 +92,8 @@ Primary compose file:
 - Grafana: `http://grafana.vion.test` or `http://localhost:3000`
 - Prometheus: `http://localhost:9090`
 - cAdvisor: `http://cadvisor.vion.test` or `http://localhost:8083`
-- Registry routed HTTP: `http://registry.localhost`
-- Registry Docker endpoint: `localhost:5000`
+- Registry routed HTTP: `http://registry.vion.test/v2/`
+- Registry Docker endpoint: `registry.vion.test:80`
 
 ## Observability Conventions
 
@@ -149,7 +150,7 @@ It is used to validate:
 
 ### Important current decisions for Vion Arena
 
-1. Its images should use `localhost:5000`, not `registry.localhost`.
+1. Its images should use `registry.vion.test:80`.
 
 2. The Jenkins pipeline was fixed to work with a host Docker daemon.
    - Problem: `-v "$PWD":/workspace` broke because Jenkins talks to the host daemon through `/var/run/docker.sock`.
@@ -228,8 +229,8 @@ docker exec -u root vion-project-grafana-1 grafana cli admin reset-admin-passwor
 
 ## Known Sharp Edges
 
-1. `registry.localhost` is not the right endpoint for Docker CLI pushes on this machine.
-   - Use `localhost:5000`.
+1. `registry.vion.test:80` is the normal LAN registry endpoint for Docker CLI pushes.
+   - Configure it as an insecure registry on every Docker daemon that pushes or pulls images.
 
 2. Grafana API verification may fail if the live admin password differs from the compose default.
 

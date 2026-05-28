@@ -1,3 +1,7 @@
+# Reference platform compose file copied from the repo's active stack.
+# Use this as a starting point in another project, then rename hostnames,
+# tighten security, and trim services you do not need.
+
 services:
   traefik:
     image: traefik:v3.6.2
@@ -16,7 +20,7 @@ services:
       - --entrypoints.web.address=:80
     ports:
       - "${HTTP_PORT:-80}:80"
-      - "${TRAEFIK_DASHBOARD_PORT:-8080}:8080" # Traefik dashboard (dev only)
+      - "${TRAEFIK_DASHBOARD_PORT:-8080}:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     labels:
@@ -70,7 +74,6 @@ services:
       - JAVA_OPTS=-Djenkins.install.runSetupWizard=true
     volumes:
       - jenkins-home:/var/jenkins_home
-      # allow Jenkins to run docker commands on host docker
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "${JENKINS_PORT:-8081}:8080"
