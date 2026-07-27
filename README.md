@@ -90,3 +90,4 @@ These dashboards persist through Grafana restarts because they are loaded from t
 - `DOC.md` contains the longer stack setup log and troubleshooting notes.
 - `docs/platform/` contains reusable platform docs intended for another Codex session or another repo.
 - `docs/platform/shipping-checklist.md` contains the LAN product readiness checklist.
+- `docs/platform/vitrial-cicd-migration.md` records the Vitrial migration boundary: this repo owns the shared platform stack, while the `vion-arena` app repo keeps its Jenkinsfile, app compose files, Unity validation, and future dedicated-server packaging files.

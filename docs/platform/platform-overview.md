@@ -99,3 +99,17 @@ For a game project, this stack can stay mostly unchanged. The main work is to:
 - When Jenkins launches helper containers against the host Docker daemon, container-internal paths should not be bind-mounted with `-v "$PWD":...`; shared-volume approaches such as `--volumes-from` are safer.
 - The registry currently has no auth or TLS in this LAN/internal stack.
 - Docker clients that push or pull from the LAN registry must configure `registry.vion.test:80` as an insecure registry.
+
+## Vitrial Integration Boundary
+
+For the Vitrial lane, this `version1` platform repo remains the source of truth for the shared stack. The `vion-arena` app repo should not duplicate Traefik, registry, Jenkins, Grafana, Prometheus, Loki, Promtail, or platform provisioning files.
+
+Instead, app-local CI/CD should consume:
+
+- Docker registry endpoint `registry.vion.test:80`;
+- external networks `vion-project_edge` and `vion-project_internal` by default;
+- the platform Jenkins image with Docker CLI and Docker Compose v2 plugin preinstalled;
+- Traefik labels only for app web/API services;
+- Promtail/Loki labels and Prometheus labels that match this stack's discovery conventions.
+
+See `docs/platform/vitrial-cicd-migration.md` for the concrete migration plan and the app-local follow-up patch needed in `vion-arena`.

@@ -20,14 +20,16 @@ Platform:
 3. `docs/platform/platform-overview.md`
 4. `docs/platform/local-development.md`
 5. `docs/platform/observability.md`
-6. `docker-compose.yaml`
+6. `docs/platform/vitrial-cicd-migration.md`
+7. `docker-compose.yaml`
 
-Application example:
+Application example / Vitrial app-local lane:
 
-1. `vion-arena/AGENTS.md`
-2. `vion-arena/README.md`
-3. `vion-arena/Jenkinsfile`
-4. `vion-arena/deploy/docker-compose.app.yml`
+1. `docs/platform/vitrial-cicd-migration.md`
+2. `/home/vion/src/git/vion-arena/AGENTS.md`
+3. `/home/vion/src/git/vion-arena/README.md`
+4. `/home/vion/src/git/vion-arena/Jenkinsfile`
+5. `/home/vion/src/git/vion-arena/deploy/docker-compose.app.yml`
 
 Grafana and dashboards:
 
@@ -133,13 +135,23 @@ These are defined in:
 
 - `platform-stack/grafana/provisioning/dashboards/vion-arena/`
 
-## Vion Arena State
+## Vitrial / Vion Arena Boundary
 
-The example app lives in:
+The shared platform stack lives in this repository and is the source of truth for:
 
-- `vion-arena/`
+- Traefik, registry, Jenkins, Prometheus, Grafana, Loki, Promtail, node-exporter, cAdvisor, and optional dnsmasq
+- registry endpoint `registry.vion.test:80`
+- default platform networks `vion-project_edge` and `vion-project_internal`
+- Jenkins custom image `registry.vion.test:80/vion/jenkins-docker:lts-jdk17`
+- Grafana datasource and dashboard provisioning under `platform-stack/grafana/provisioning/`
 
-It is used to validate:
+The Vitrial app-local lane lives outside this repo in:
+
+- `/home/vion/src/git/vion-arena`
+
+It keeps the app-specific Jenkinsfile, app deploy compose, Unity validation script, and future dedicated-server Docker/Compose files. Do not copy the platform stack into that repo; have the app consume this stack through the registry endpoint, external networks, and observability/routing labels documented in `docs/platform/vitrial-cicd-migration.md`.
+
+The app is used to validate:
 
 - Traefik routing
 - Jenkins CI/CD
@@ -150,7 +162,7 @@ It is used to validate:
 
 ### Important current decisions for Vion Arena
 
-1. Its images should use `registry.vion.test:80`.
+1. Its images should use `registry.vion.test:80`, not `localhost:5000`.
 
 2. The Jenkins pipeline was fixed to work with a host Docker daemon.
    - Problem: `-v "$PWD":/workspace` broke because Jenkins talks to the host daemon through `/var/run/docker.sock`.
@@ -161,10 +173,12 @@ It is used to validate:
    - The usual cause is the wrong Docker mount strategy in Jenkins.
 
 4. Arena deployment compose file:
-   - `vion-arena/deploy/docker-compose.app.yml`
+   - `/home/vion/src/git/vion-arena/deploy/docker-compose.app.yml`
+   - Should default external networks to `vion-project_edge` and `vion-project_internal`.
 
 5. Arena pipeline:
-   - `vion-arena/Jenkinsfile`
+   - `/home/vion/src/git/vion-arena/Jenkinsfile`
+   - Should use `REGISTRY = "registry.vion.test:80"` and run on the platform Jenkins image from this repo.
 
 ## Safe Working Rules
 

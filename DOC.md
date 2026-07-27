@@ -74,6 +74,12 @@ This file summarizes the changes and setup steps applied to the stack during con
    - Files live under `platform-stack/grafana/provisioning/dashboards/vion-arena/`
    - Dashboards are loaded from disk and persist through Grafana container restarts
 
+15. Captured the Vitrial CI/CD migration boundary for the real `version1` platform stack:
+   - Platform source of truth remains this repo: `docker-compose.yaml` and `platform-stack/`
+   - Vitrial app-local pipeline files remain in `/home/vion/src/git/vion-arena`
+   - Required Vitrial app follow-up is documented in `docs/platform/vitrial-cicd-migration.md`
+   - Arena scaffold assumptions to replace include `localhost:5000` registry usage and non-version1 network defaults
+
 ## Log Collection Overview
 Logs flow through the stack like this:
 

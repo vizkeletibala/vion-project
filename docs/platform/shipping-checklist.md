@@ -23,6 +23,13 @@ Use this checklist before handing the LAN/internal compose bundle to a customer.
 
 - Use `docker-compose.registry-direct.yaml` only for troubleshooting or migration.
 
+## Application Integration
+
+- Application repositories that deploy into this stack should use `registry.vion.test:80`, not `localhost:5000`, in Jenkinsfiles, compose defaults, and docs.
+- Application compose files should consume the platform networks as external networks. With the default compose project, those names are `vion-project_edge` and `vion-project_internal`.
+- Do not copy the platform stack into application repos. Keep app-specific Jenkinsfiles, Dockerfiles, compose files, and validation scripts app-local while consuming the shared stack through registry, network, routing, and observability conventions.
+- For the Vitrial lane specifically, follow `docs/platform/vitrial-cicd-migration.md` before treating the arena-side scaffold as production CI/CD.
+
 ## Security Boundary
 
 - Treat this v1 profile as LAN/internal only.
